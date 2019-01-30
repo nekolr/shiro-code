@@ -1,0 +1,25 @@
+# IntelliJ
+*.ipr
+*.iml
+*.iws
+.idea/
+
+#
+# Eclipse metadata.
+#
+.project
+.classpath
+.settings/
+
+#
+# Eclipse and Maven output folders.
+#
+bin/
+target/
+
+#
+# Maven release metadata
+#
+release.properties
+pom.xml.*
+-
