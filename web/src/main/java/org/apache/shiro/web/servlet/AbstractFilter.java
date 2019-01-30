@@ -85,6 +85,8 @@ public abstract class AbstractFilter extends ServletContextSupport implements Fi
     }
 
     /**
+     * 该方法实现了 Filter 接口的 init 方法，会在容器启动过程中被执行
+     *
      * Sets the filter's {@link #setFilterConfig filterConfig} and then immediately calls
      * {@link #onFilterConfigSet() onFilterConfigSet()} to trigger any processing a subclass might wish to perform.
      *
@@ -92,8 +94,10 @@ public abstract class AbstractFilter extends ServletContextSupport implements Fi
      * @throws javax.servlet.ServletException if {@link #onFilterConfigSet() onFilterConfigSet()} throws an Exception.
      */
     public final void init(FilterConfig filterConfig) throws ServletException {
+        // 设置过滤器的配置信息
         setFilterConfig(filterConfig);
         try {
+            // 设置完配置信息后调用
             onFilterConfigSet();
         } catch (Exception e) {
             if (e instanceof ServletException) {

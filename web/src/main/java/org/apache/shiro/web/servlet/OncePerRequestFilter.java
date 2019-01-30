@@ -28,6 +28,9 @@ import javax.servlet.ServletResponse;
 import java.io.IOException;
 
 /**
+ * 过滤器基类，保证在任何 Servlet 容器中，对于每个请求只执行一次过滤的方法，
+ * 通过 getAlreadyFilteredAttributeName 方法确定如何标识已过滤过的请求。
+ *
  * Filter base class that guarantees to be just executed once per request,
  * on any servlet container. It provides a {@link #doFilterInternal}
  * method with HttpServletRequest and HttpServletResponse arguments.
@@ -52,6 +55,8 @@ public abstract class OncePerRequestFilter extends NameableFilter {
     private static final Logger log = LoggerFactory.getLogger(OncePerRequestFilter.class);
 
     /**
+     * 已经被过滤过的请求，在 request.setAttribute 中放置标记时的后缀
+     *
      * Suffix that gets appended to the filter name for the "already filtered" request attribute.
      *
      * @see #getAlreadyFilteredAttributeName
@@ -106,26 +111,32 @@ public abstract class OncePerRequestFilter extends NameableFilter {
      */
     public final void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        // 获取已经被过滤过的请求将会设置的属性名称
         String alreadyFilteredAttributeName = getAlreadyFilteredAttributeName();
         if ( request.getAttribute(alreadyFilteredAttributeName) != null ) {
             log.trace("Filter '{}' already executed.  Proceeding without invoking this filter.", getName());
+            // 已经过滤过请求，直接通过
             filterChain.doFilter(request, response);
-        } else //noinspection deprecation
+        } else
+            // 当设置不启用该过滤器时，直接通过
             if (/* added in 1.2: */ !isEnabled(request, response) ||
                 /* retain backwards compatibility: */ shouldNotFilter(request) ) {
             log.debug("Filter '{}' is not enabled for the current request.  Proceeding without invoking this filter.",
                     getName());
             filterChain.doFilter(request, response);
         } else {
-            // Do invoke this filter...
+            // 说明还没有经过该过滤器
             log.trace("Filter '{}' not yet executed.  Executing now.", getName());
+            // 设置请求属性为已经被过滤过
             request.setAttribute(alreadyFilteredAttributeName, Boolean.TRUE);
 
             try {
+                // 执行过滤方法
                 doFilterInternal(request, response, filterChain);
             } finally {
                 // Once the request has finished, we're done and we don't
                 // need to mark as 'already filtered' any more.
+                // 最终一次请求总会结束，此时请求的是否已经被过滤过的标记已经没用了，删除之
                 request.removeAttribute(alreadyFilteredAttributeName);
             }
         }

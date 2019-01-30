@@ -70,12 +70,16 @@ public class ShiroFilter extends AbstractShiroFilter {
      */
     @Override
     public void init() throws Exception {
+        // 通过 ServletContext 获取 WebEnvironment
+        // ServletContext.getAttribute(EnvironmentLoader.class.getName() + ".ENVIRONMENT_ATTRIBUTE_KEY")
         WebEnvironment env = WebUtils.getRequiredWebEnvironment(getServletContext());
 
+        // 设置注入 SecurityManager
         setSecurityManager(env.getWebSecurityManager());
 
         FilterChainResolver resolver = env.getFilterChainResolver();
         if (resolver != null) {
+            // 设置注入 FilterChainResolver
             setFilterChainResolver(resolver);
         }
     }

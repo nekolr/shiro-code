@@ -23,6 +23,8 @@ import org.apache.shiro.util.Nameable;
 import javax.servlet.FilterConfig;
 
 /**
+ * 允许通过 set 方法设置过滤器的名称，如果没有指定名称，则默认使用 web.xml 中的名称（FilterConfig 的 filterName）
+ *
  * Allows a filter to be named via JavaBeans-compatible
  * {@link #getName()}/{@link #setName(String)} methods.  If no name is specified, the name of the filter will
  * default to the name given to it in {@code web.xml} (the {@code FilterConfig}'s

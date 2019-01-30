@@ -146,12 +146,21 @@ public abstract class AbstractShiroFilter extends OncePerRequestFilter {
         this.staticSecurityManagerEnabled = staticSecurityManagerEnabled;
     }
 
+    /**
+     * 在过滤器的配置信息设置完成后调用
+     *
+     * @throws Exception
+     */
     protected final void onFilterConfigSet() throws Exception {
         //added in 1.2 for SHIRO-287:
+        // 判断是否将 SecurityManager 放到静态内存中
         applyStaticSecurityManagerEnabledConfig();
+        // ※※※※※※※※※※※※※※※※※※※※※※※※※※ 扩展点 ※※※※※※※※※※※※※※※※※※※※※※※※※※※
         init();
+        // 确保已经设置 SecurityManager，如果没有，则创建一个
         ensureSecurityManager();
         //added in 1.2 for SHIRO-287:
+        // 根据设置决定是否将 SecurityManager 放到静态内存中
         if (isStaticSecurityManagerEnabled()) {
             SecurityUtils.setSecurityManager(getSecurityManager());
         }
