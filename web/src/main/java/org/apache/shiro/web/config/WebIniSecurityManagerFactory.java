@@ -64,6 +64,7 @@ public class WebIniSecurityManagerFactory extends IniSecurityManagerFactory {
      */
     @Override
     protected SecurityManager createDefaultInstance() {
+        // 默认创建 DefaultWebSecurityManager
         return new DefaultWebSecurityManager();
     }
 

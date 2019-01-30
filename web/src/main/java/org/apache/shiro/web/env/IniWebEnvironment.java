@@ -293,12 +293,13 @@ public class IniWebEnvironment extends ResourceBasedWebEnvironment implements In
         if (!CollectionUtils.isEmpty(ini)) {
             factory.setIni(ini);
         }
-        // 获取默认的 IniFilterChainResolverFactory
+        // 默认的 filterChainResolver 为 IniFilterChainResolverFactory，获取并注入 SecurityManager 工厂实例中
         Map<String, Object> defaults = getDefaults();
         if (!CollectionUtils.isEmpty(defaults)) {
             factory.setDefaults(defaults);
         }
 
+        // 获取 WebSecurityManager 实例
         WebSecurityManager wsm = (WebSecurityManager) factory.getInstance();
 
         //SHIRO-306 - get beans after they've been created (the call was before the factory.getInstance() call,

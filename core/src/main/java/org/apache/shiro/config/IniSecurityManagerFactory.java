@@ -91,10 +91,17 @@ public class IniSecurityManagerFactory extends IniFactorySupport<SecurityManager
         return new DefaultSecurityManager();
     }
 
+    /**
+     * 根据 ini 配置创建 SecurityManager 实例
+     *
+     * @param ini
+     * @return
+     */
     protected SecurityManager createInstance(Ini ini) {
         if (CollectionUtils.isEmpty(ini)) {
             throw new NullPointerException("Ini argument cannot be null or empty.");
         }
+        // 根据 ini 配置创建 SecurityManager
         SecurityManager securityManager = createSecurityManager(ini);
         if (securityManager == null) {
             String msg = SecurityManager.class + " instance cannot be null.";
@@ -107,6 +114,12 @@ public class IniSecurityManagerFactory extends IniFactorySupport<SecurityManager
         return createSecurityManager(ini, getConfigSection(ini));
     }
 
+    /**
+     * 获取 ini 配置中的 [main] 片段
+     *
+     * @param ini
+     * @return
+     */
     private Ini.Section getConfigSection(Ini ini) {
 
         Ini.Section mainSection = ini.getSection(MAIN_SECTION_NAME);
@@ -134,12 +147,12 @@ public class IniSecurityManagerFactory extends IniFactorySupport<SecurityManager
 
     @SuppressWarnings({"unchecked"})
     private SecurityManager createSecurityManager(Ini ini, Ini.Section mainSection) {
-
+        // 设置默认的 SecurityManager 和 filterChainResolver
         getReflectionBuilder().setObjects(createDefaults(ini, mainSection));
         Map<String, ?> objects = buildInstances(mainSection);
-
+        // 通过 ReflectionBuilder 获取 SecurityManager
         SecurityManager securityManager = getSecurityManagerBean();
-
+        // TODO: 有待继续研究
         boolean autoApplyRealms = isAutoApplyRealms(securityManager);
 
         if (autoApplyRealms) {
@@ -157,10 +170,11 @@ public class IniSecurityManagerFactory extends IniFactorySupport<SecurityManager
 
     protected Map<String, ?> createDefaults(Ini ini, Ini.Section mainSection) {
         Map<String, Object> defaults = new LinkedHashMap<String, Object>();
-
+        // 创建默认的 SecurityManager，即 DefaultSecurityManager
         SecurityManager securityManager = createDefaultInstance();
         defaults.put(SECURITY_MANAGER_NAME, securityManager);
 
+        // 如果 ini 配置中包含账户信息（如配置了 [roles]、[users] 等），则可能需要隐式地创建出 IniRealm
         if (shouldImplicitlyCreateRealm(ini)) {
             Realm realm = createRealm(ini);
             if (realm != null) {
@@ -168,7 +182,7 @@ public class IniSecurityManagerFactory extends IniFactorySupport<SecurityManager
             }
         }
 
-        // The values from 'getDefaults()' will override the above.
+        // 获取 SecurityManagerFactory 中默认的 bean 并注入工厂实例中
         Map<String, ?> defaultBeans = getDefaults();
         if (!CollectionUtils.isEmpty(defaultBeans)) {
             defaults.putAll(defaultBeans);

@@ -40,14 +40,22 @@ public abstract class AbstractFactory<T> implements Factory<T> {
         this.singleton = singleton;
     }
 
+    /**
+     * 获取实例
+     *
+     * @return
+     */
     public T getInstance() {
         T instance;
+        // 获取单例实例
         if (isSingleton()) {
             if (this.singletonInstance == null) {
+                // 创建单例实例
                 this.singletonInstance = createInstance();
             }
             instance = this.singletonInstance;
         } else {
+            // 直接创建新实例
             instance = createInstance();
         }
         if (instance == null) {
