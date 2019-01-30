@@ -22,10 +22,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 /**
- * Bootstrap listener to startup and shutdown the web application's Shiro
- * {@link WebEnvironment} at ServletContext startup and shutdown respectively.  This class exists only to
- * implement the {@link ServletContextListener} interface. All 'real' logic is done in the parent
- * {@link EnvironmentLoader} class.
+ * 实现了 ServletContextListener 接口，因此会在 Servlet 容器启动和关闭时执行相应的逻辑
  * <h2>Usage</h2>
  * Define the following in {@code web.xml}:
  * <pre>
@@ -55,6 +52,7 @@ public class EnvironmentLoaderListener extends EnvironmentLoader implements Serv
      * @param sce the ServletContextEvent triggered upon application startup
      */
     public void contextInitialized(ServletContextEvent sce) {
+        // 在容器启动时初始化 Shiro WebEnvironment
         initEnvironment(sce.getServletContext());
     }
 

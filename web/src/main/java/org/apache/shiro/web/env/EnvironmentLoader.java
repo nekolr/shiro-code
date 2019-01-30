@@ -135,8 +135,9 @@ public class EnvironmentLoader {
         long startTime = System.currentTimeMillis();
 
         try {
-
+            // 创建 WebEnvironment
             WebEnvironment environment = createEnvironment(servletContext);
+            // 将 WebEnvironment 放到 Servlet 容器上下文中
             servletContext.setAttribute(ENVIRONMENT_ATTRIBUTE_KEY,environment);
 
             log.debug("Published WebEnvironment as ServletContext attribute with name [{}]",
@@ -186,9 +187,11 @@ public class EnvironmentLoader {
     private Class<? extends WebEnvironment> webEnvironmentClassFromServletContext(ServletContext servletContext) {
 
         Class<? extends WebEnvironment> webEnvironmentClass = null;
+        // 获取 web.xml 配置的名称为 shiroEnvironmentClass 的 <context-param>
         String className = servletContext.getInitParameter(ENVIRONMENT_CLASS_PARAM);
         if (className != null) {
             try {
+                // 获取对应的 class
                 webEnvironmentClass = ClassUtils.forName(className);
             } catch (UnknownClassException ex) {
                 throw new ConfigurationException(
@@ -201,15 +204,16 @@ public class EnvironmentLoader {
     private WebEnvironment webEnvironmentFromServiceLoader() {
 
         WebEnvironment webEnvironment = null;
-        // try to load WebEnvironment as a service
+        // 加载 WebEnvironment 接口的实现类
         ServiceLoader<WebEnvironment> serviceLoader = ServiceLoader.load(WebEnvironment.class);
+        // ServiceLoader 实现了 Iterable 接口，因此可以遍历
         Iterator<WebEnvironment> iterator = serviceLoader.iterator();
 
-        // Use the first one
+        // 只取用第一个
         if (iterator.hasNext()) {
             webEnvironment = iterator.next();
         }
-        // if there are others, throw an error
+        // 如果还有其他的，则收集后抛出异常
         if (iterator.hasNext()) {
             List<String> allWebEnvironments = new ArrayList<String>();
             allWebEnvironments.add(webEnvironment.getClass().getName());
@@ -246,21 +250,21 @@ public class EnvironmentLoader {
      * @return the {@code WebEnvironment} to be used
      */
     protected WebEnvironment determineWebEnvironment(ServletContext servletContext) {
-
+        // 从 web.xml 配置中获取需要实例化的 WebEnvironment（一般使用 Web 容器但是不集成 Spring 时，都会使用 IniWebEnvironment）
         Class<? extends WebEnvironment> webEnvironmentClass = webEnvironmentClassFromServletContext(servletContext);
         WebEnvironment webEnvironment = null;
 
-        // try service loader next
+        // 如果没找到，则继续通过 Java SPI 机制查找 META-INF/services/ 下的文件
         if (webEnvironmentClass == null) {
             webEnvironment = webEnvironmentFromServiceLoader();
         }
 
-        // if webEnvironment is not set, and ENVIRONMENT_CLASS_PARAM prop was not set, use the default
+        // 使用默认的 WebEnvironment，默认的是 IniWebEnvironment.class
         if (webEnvironmentClass == null && webEnvironment == null) {
             webEnvironmentClass = getDefaultWebEnvironmentClass();
         }
 
-        // at this point, we anything is set for the webEnvironmentClass, load it.
+        // 反射实例化 WebEnvironment
         if (webEnvironmentClass != null) {
             webEnvironment = (WebEnvironment) ClassUtils.newInstance(webEnvironmentClass);
         }
@@ -283,16 +287,19 @@ public class EnvironmentLoader {
      * @see ResourceConfigurable
      */
     protected WebEnvironment createEnvironment(ServletContext sc) {
-
+        // 发现 WebEnvironment
         WebEnvironment webEnvironment = determineWebEnvironment(sc);
+        // WebEnvironment 必须实现了 MutableWebEnvironment 接口
         if (!MutableWebEnvironment.class.isInstance(webEnvironment)) {
             throw new ConfigurationException("Custom WebEnvironment class [" + webEnvironment.getClass().getName() +
                     "] is not of required type [" + MutableWebEnvironment.class.getName() + "]");
         }
 
+        // 获取 Shiro 配置文件的路径
         String configLocations = sc.getInitParameter(CONFIG_LOCATIONS_PARAM);
         boolean configSpecified = StringUtils.hasText(configLocations);
 
+        // WebEnvironment 必须实现了 ResourceConfigurable 接口
         if (configSpecified && !(ResourceConfigurable.class.isInstance(webEnvironment))) {
             String msg = "WebEnvironment class [" + webEnvironment.getClass().getName() + "] does not implement the " +
                     ResourceConfigurable.class.getName() + "interface.  This is required to accept any " +
@@ -302,14 +309,19 @@ public class EnvironmentLoader {
 
         MutableWebEnvironment environment = (MutableWebEnvironment) webEnvironment;
 
+        // 注入 Servlet 容器上下文
         environment.setServletContext(sc);
 
+        // 注入配置文件路径
         if (configSpecified && (environment instanceof ResourceConfigurable)) {
             ((ResourceConfigurable) environment).setConfigLocations(configLocations);
         }
 
+        // ※※※※※※※※※※※※※※※※※※※※※※※※※※ 扩展点 ※※※※※※※※※※※※※※※※※※※※※※※※※※※
         customizeEnvironment(environment);
 
+        // 只要 WebEnvironment 实现了 Initializable 和 Destroyable，就可以通过 LifecycleUtils 工具类干净地调用
+        // init 方法和 destroy 方法
         LifecycleUtils.init(environment);
 
         return environment;
