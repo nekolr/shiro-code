@@ -71,17 +71,22 @@ public class IniFilterChainResolverFactory extends IniFactorySupport<FilterChain
     }
 
     protected FilterChainResolver createInstance(Ini ini) {
+        // 创建默认的实例
         FilterChainResolver filterChainResolver = createDefaultInstance();
         if (filterChainResolver instanceof PathMatchingFilterChainResolver) {
             PathMatchingFilterChainResolver resolver = (PathMatchingFilterChainResolver) filterChainResolver;
+            // 获取 FilterChainManager
             FilterChainManager manager = resolver.getFilterChainManager();
+            // 构建过滤器链
             buildChains(manager, ini);
         }
         return filterChainResolver;
     }
 
     protected FilterChainResolver createDefaultInstance() {
+        // 获取过滤器的配置信息
         FilterConfig filterConfig = getFilterConfig();
+        // 创建 PathMatchingFilterChainResolver
         if (filterConfig != null) {
             return new PathMatchingFilterChainResolver(filterConfig);
         } else {
@@ -90,7 +95,7 @@ public class IniFilterChainResolverFactory extends IniFactorySupport<FilterChain
     }
 
     protected void buildChains(FilterChainManager manager, Ini ini) {
-        //filters section:
+        // 获取 ini 配置中的 [filters]
         Ini.Section section = ini.getSection(FILTERS);
 
         if (!CollectionUtils.isEmpty(section)) {
@@ -100,7 +105,7 @@ public class IniFilterChainResolverFactory extends IniFactorySupport<FilterChain
         }
 
         Map<String, Object> defaults = new LinkedHashMap<String, Object>();
-
+        // 获取默认的过滤器
         Map<String, Filter> defaultFilters = manager.getFilters();
 
         //now let's see if there are any object defaults in addition to the filters
@@ -116,13 +121,15 @@ public class IniFilterChainResolverFactory extends IniFactorySupport<FilterChain
             defaults.putAll(defaultBeans);
         }
 
+        // 获取所有的过滤器（包括配置的）
         Map<String, Filter> filters = getFilters(section, defaults);
 
-        //add the filters to the manager:
+        // 将所有的过滤器放入 FilterChainManager
         registerFilters(filters, manager);
 
         //urls section:
         section = ini.getSection(URLS);
+        // 根据 [urls] 配置生成过滤链，最终放入 FilterChainManager 里
         createChains(section, manager);
     }
 
@@ -138,10 +145,11 @@ public class IniFilterChainResolverFactory extends IniFactorySupport<FilterChain
     }
 
     protected Map<String, Filter> getFilters(Map<String, String> section, Map<String, ?> defaults) {
-
+        // 提取默认的过滤器
         Map<String, Filter> filters = extractFilters(defaults);
 
         if (!CollectionUtils.isEmpty(section)) {
+            // TODO: 后续研究
             ReflectionBuilder builder = new ReflectionBuilder(defaults);
             Map<String, ?> built = builder.buildObjects(section);
             Map<String,Filter> sectionFilters = extractFilters(built);
@@ -158,6 +166,12 @@ public class IniFilterChainResolverFactory extends IniFactorySupport<FilterChain
         return filters;
     }
 
+    /**
+     * 提取过滤器
+     *
+     * @param objects
+     * @return
+     */
     private Map<String, Filter> extractFilters(Map<String, ?> objects) {
         if (CollectionUtils.isEmpty(objects)) {
             return null;
@@ -186,8 +200,11 @@ public class IniFilterChainResolverFactory extends IniFactorySupport<FilterChain
         }
 
         for (Map.Entry<String, String> entry : urls.entrySet()) {
+            // 路径
             String path = entry.getKey();
+            // 使用的过滤器
             String value = entry.getValue();
+            // 创建过滤链
             manager.createChain(path, value);
         }
     }

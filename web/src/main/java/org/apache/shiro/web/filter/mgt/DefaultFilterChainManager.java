@@ -137,14 +137,18 @@ public class DefaultFilterChainManager implements FilterChainManager {
         //
         //     { "authc", "roles[admin,user]", "perms[file:edit]" }
         //
+        // 拆分 [urls] 配置的 value 值
         String[] filterTokens = splitChainDefinition(chainDefinition);
 
         //each token is specific to each filter.
         //strip the name and extract any filter-specific config between brackets [ ]
         for (String token : filterTokens) {
+            // 拆分成名称和配置对
             String[] nameConfigPair = toNameConfigPair(token);
 
-            //now we have the filter name, path and (possibly null) path-specific config.  Let's apply them:
+            // now we have the filter name, path and (possibly null) path-specific config.  Let's apply them:
+            // 例如：/api/user = roles[admin]，那么最终 chainName=/api/user，nameConfigPair[0]=roles，nameConfigPair[1]=admin
+            // 接下来将过滤器加入到过滤器链中
             addToChain(chainName, nameConfigPair[0], nameConfigPair[1]);
         }
     }
@@ -197,7 +201,9 @@ public class DefaultFilterChainManager implements FilterChainManager {
     protected String[] toNameConfigPair(String token) throws ConfigurationException {
 
         try {
+            // 分割，limit 为 2 表示最多分成两个槽位
             String[] pair = token.split("\\[", 2);
+            // 取出头尾的空格
             String name = StringUtils.clean(pair[0]);
 
             if (name == null) {
@@ -207,7 +213,7 @@ public class DefaultFilterChainManager implements FilterChainManager {
 
             if (pair.length == 2) {
                 config = StringUtils.clean(pair[1]);
-                //if there was an open bracket, it assumed there is a closing bracket, so strip it too:
+                // 将最后的 ] 去掉
                 config = config.substring(0, config.length() - 1);
                 config = StringUtils.clean(config);
 
@@ -230,7 +236,7 @@ public class DefaultFilterChainManager implements FilterChainManager {
                     //So we ignore the stripped value.
                 }
             }
-            
+
             return new String[]{name, config};
 
         } catch (Exception e) {
@@ -260,6 +266,7 @@ public class DefaultFilterChainManager implements FilterChainManager {
         if (!StringUtils.hasText(chainName)) {
             throw new IllegalArgumentException("chainName cannot be null or empty.");
         }
+        // 通过过滤器的名称从 FilterChainManager 中找到该过滤器
         Filter filter = getFilter(filterName);
         if (filter == null) {
             throw new IllegalArgumentException("There is no filter with name '" + filterName +
@@ -267,9 +274,15 @@ public class DefaultFilterChainManager implements FilterChainManager {
                     "filter with that name/path has first been registered with the addFilter method(s).");
         }
 
+        // 应用过滤器的配置信息，将配置加入到对应的过滤器中
         applyChainConfig(chainName, filter, chainSpecificFilterConfig);
-
+        /**
+         * FilterChainManager 里维护了一个类型为 Map<String, NamedFilterList> 的 filterChains
+         * key 对应的就是 chainName，也就是路径；value 对应的就是 NamedFilterList，它继承自 List<Filter>
+         * 创建完的过滤器就会加入到里边
+         */
         NamedFilterList chain = ensureChain(chainName);
+        // 将过滤器加入到 NamedFilterList
         chain.add(filter);
     }
 
@@ -278,7 +291,9 @@ public class DefaultFilterChainManager implements FilterChainManager {
             log.debug("Attempting to apply path [" + chainName + "] to filter [" + filter + "] " +
                     "with config [" + chainSpecificFilterConfig + "]");
         }
+        // 设置路径和对应的配置信息
         if (filter instanceof PathConfigProcessor) {
+            // chainName 就是路径，比如 /api/user，chainSpecificFilterConfig 就是配置信息，比如 roles[admin] 的配置信息就是 admin
             ((PathConfigProcessor) filter).processPathConfig(chainName, chainSpecificFilterConfig);
         } else {
             if (StringUtils.hasText(chainSpecificFilterConfig)) {
@@ -316,11 +331,14 @@ public class DefaultFilterChainManager implements FilterChainManager {
     }
 
     public FilterChain proxy(FilterChain original, String chainName) {
+        // 获取配置的命名链
         NamedFilterList configured = getChain(chainName);
         if (configured == null) {
             String msg = "There is no configured chain under the name/key [" + chainName + "].";
             throw new IllegalArgumentException(msg);
         }
+        // proxy 方法返回一个新的 FilterChain，该实例包含原始链和配置的命名链，同时它重写了 doFilter 方法，该方法会
+        // 先会先执行配置的命名链，最后才执行原始链
         return configured.proxy(original);
     }
 

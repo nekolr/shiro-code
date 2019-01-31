@@ -52,17 +52,27 @@ public class ProxiedFilterChain implements FilterChain {
         this.index = 0;
     }
 
+    /**
+     * 被重写过的 FilterChain，会先执行命名链，最后才执行原始链
+     *
+     * @param request
+     * @param response
+     * @throws IOException
+     * @throws ServletException
+     */
     public void doFilter(ServletRequest request, ServletResponse response) throws IOException, ServletException {
         if (this.filters == null || this.filters.size() == this.index) {
             //we've reached the end of the wrapped chain, so invoke the original one:
             if (log.isTraceEnabled()) {
                 log.trace("Invoking original filter chain.");
             }
+            // 没有设置命名链，则直接执行原始链的 doFilter
             this.orig.doFilter(request, response);
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Invoking wrapped filter at index [" + this.index + "]");
             }
+            // 顺序执行配置的命名链
             this.filters.get(this.index++).doFilter(request, response, this);
         }
     }

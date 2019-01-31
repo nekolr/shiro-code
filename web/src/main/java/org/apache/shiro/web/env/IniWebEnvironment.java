@@ -256,6 +256,11 @@ public class IniWebEnvironment extends ResourceBasedWebEnvironment implements In
         return ini;
     }
 
+    /**
+     * 创建 FilterChainResolver
+     *
+     * @return
+     */
     protected FilterChainResolver createFilterChainResolver() {
 
         FilterChainResolver resolver = null;
@@ -263,18 +268,21 @@ public class IniWebEnvironment extends ResourceBasedWebEnvironment implements In
         Ini ini = getIni();
 
         if (!CollectionUtils.isEmpty(ini)) {
-            //only create a resolver if the 'filters' or 'urls' sections are defined:
+            // 如果 ini 配置中定义了 [urls] 和 [filters]，则只创建一个解析器
             Ini.Section urls = ini.getSection(IniFilterChainResolverFactory.URLS);
             Ini.Section filters = ini.getSection(IniFilterChainResolverFactory.FILTERS);
             if (!CollectionUtils.isEmpty(urls) || !CollectionUtils.isEmpty(filters)) {
-                //either the urls section or the filters section was defined.  Go ahead and create the resolver:
-
+                /**
+                 * 还记得 {@link IniWebEnvironment#createWebSecurityManager} 方法吗？
+                 * 其中会向 this.objects 放入 IniFilterChainResolverFactory
+                 */
                 Factory<FilterChainResolver> factory = (Factory<FilterChainResolver>) this.objects.get(FILTER_CHAIN_RESOLVER_NAME);
                 if (factory instanceof IniFactorySupport) {
                     IniFactorySupport iniFactory = (IniFactorySupport) factory;
                     iniFactory.setIni(ini);
                     iniFactory.setDefaults(this.objects);
                 }
+                // 获取实例
                 resolver = factory.getInstance();
             }
         }

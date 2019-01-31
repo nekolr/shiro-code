@@ -91,7 +91,12 @@ public class PathMatchingFilterChainResolver implements FilterChainResolver {
     }
 
     public FilterChain getChain(ServletRequest request, ServletResponse response, FilterChain originalChain) {
+        // 获取 FilterChainManager
         FilterChainManager filterChainManager = getFilterChainManager();
+        /**
+         * 在 {@link DefaultFilterChainManager#addToChain} 方法中会将配置的过滤器和配置信息加入到
+         * FilterChainManager 的 filterChains 中
+         */
         if (!filterChainManager.hasChains()) {
             return null;
         }
@@ -100,14 +105,19 @@ public class PathMatchingFilterChainResolver implements FilterChainResolver {
 
         //the 'chain names' in this implementation are actually path patterns defined by the user.  We just use them
         //as the chain name for the FilterChainManager's requirements
+
+        // 遍历 filterChains 中所有的 key，这里的 key 其实就是路径
         for (String pathPattern : filterChainManager.getChainNames()) {
 
             // If the path does match, then pass on to the subclass implementation for specific checks:
+
+            // 检查当前请求的路径和配置是否匹配
             if (pathMatches(pathPattern, requestURI)) {
                 if (log.isTraceEnabled()) {
                     log.trace("Matched path pattern [" + pathPattern + "] for requestURI [" + requestURI + "].  " +
                             "Utilizing corresponding filter chain...");
                 }
+                // 返回的新的 FilterChain 实例包含原始链和命名链
                 return filterChainManager.proxy(originalChain, pathPattern);
             }
         }
@@ -131,7 +141,9 @@ public class PathMatchingFilterChainResolver implements FilterChainResolver {
      *         {@code false} otherwise.
      */
     protected boolean pathMatches(String pattern, String path) {
+        // 获取 PatternMatcher
         PatternMatcher pathMatcher = getPathMatcher();
+        // 进行匹配
         return pathMatcher.matches(pattern, path);
     }
 

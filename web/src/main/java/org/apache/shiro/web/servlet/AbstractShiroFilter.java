@@ -362,15 +362,20 @@ public abstract class AbstractShiroFilter extends OncePerRequestFilter {
         Throwable t = null;
 
         try {
+            // 如果请求是 HttpServletRequest，则构造 ShiroHttpServletRequest
             final ServletRequest request = prepareServletRequest(servletRequest, servletResponse, chain);
+            // 如果请求是 HttpServletResponse，则构造 ShiroHttpServletResponse
             final ServletResponse response = prepareServletResponse(request, servletResponse, chain);
-
+            // 构造 WebSubject
             final Subject subject = createSubject(request, response);
 
-            //noinspection unchecked
+            // 过滤请求，传入的 Callable 会被构造成 SubjectCallable，在构造过程中会将 Subject 放入 ThreadLocal 中
+            // 这样可以在线程执行过程中使用 SecurityUtils 获取 Subject 和 SecurityManager
             subject.execute(new Callable() {
                 public Object call() throws Exception {
+                    // 更新会话的 lastAccessTime，确保会话不会超时
                     updateSessionLastAccessTime(request, response);
+                    // 执行过滤
                     executeChain(request, response, chain);
                     return null;
                 }
@@ -414,13 +419,13 @@ public abstract class AbstractShiroFilter extends OncePerRequestFilter {
      */
     protected FilterChain getExecutionChain(ServletRequest request, ServletResponse response, FilterChain origChain) {
         FilterChain chain = origChain;
-
+        // 获取 FilterChainResolver（比如 PathMatchingFilterChainResolver）
         FilterChainResolver resolver = getFilterChainResolver();
         if (resolver == null) {
             log.debug("No FilterChainResolver configured.  Returning original FilterChain.");
             return origChain;
         }
-
+        // 获取并执行过滤器链
         FilterChain resolved = resolver.getChain(request, response, origChain);
         if (resolved != null) {
             log.trace("Resolved a configured FilterChain for the current request.");
@@ -454,6 +459,7 @@ public abstract class AbstractShiroFilter extends OncePerRequestFilter {
      */
     protected void executeChain(ServletRequest request, ServletResponse response, FilterChain origChain)
             throws IOException, ServletException {
+        // 获取过滤链的同时执行过滤
         FilterChain chain = getExecutionChain(request, response, origChain);
         chain.doFilter(request, response);
     }

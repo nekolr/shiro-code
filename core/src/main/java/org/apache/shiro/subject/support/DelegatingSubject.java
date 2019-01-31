@@ -45,6 +45,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * 实现了 Subject 接口，维护了一个 SecurityManager，它将 Subject 所有的身份认证、权限校验的方法委托给 SecurityManager 执行。
+ *
  * Implementation of the {@code Subject} interface that delegates
  * method calls to an underlying {@link org.apache.shiro.mgt.SecurityManager SecurityManager} instance for security checks.
  * It is essentially a {@code SecurityManager} proxy.
@@ -382,6 +384,8 @@ public class DelegatingSubject implements Subject {
     }
 
     public <V> V execute(Callable<V> callable) throws ExecutionException {
+        // 构造 SubjectCallable，然后再构造 SubjectThreadState，最终会将 subject 放入 ThreadLocal 中，
+        // 这样就可以在线程执行期间使用 SecurityUtils.getSubject() 和 SecurityUtils.getSecurityManager()
         Callable<V> associated = associateWith(callable);
         try {
             return associated.call();
